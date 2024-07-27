@@ -9,7 +9,9 @@ const port = process.env.PORT ?? 3000
 
 const app = express()
 const server = createServer(app)
-const io = new Server(server)
+const io = new Server(server, {
+    connectionStateRecovery: {}
+})
 
 io.on('connection', (socket) => {
     console.log('User connected')
@@ -19,7 +21,19 @@ io.on('connection', (socket) => {
     })
 
     socket.on('chat message', (msg) => {
-        console.log('message: ' + msg)
+        switch (msg) {
+            case 'exit':
+                console.log('message: ' + msg)
+                socket.disconnect()                
+                break
+            case '':
+                console.log('empty message')
+                break
+            default:
+                io.emit('chat message', msg)
+                console.log('message: ' + msg)
+                break            
+        }     
     })
 })
 
