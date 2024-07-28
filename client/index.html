@@ -7,16 +7,41 @@
 		<script type="module">
 			import { io } from 'https://cdn.socket.io/4.3.2/socket.io.esm.min.js'
 
-			const socket = io()
+			//function to get username
+			async function getUsername() {
+				const username = localStorage.getItem('username') 
+				if (username) {
+					console.log('Username1:', username)
+					return username
+				}
+
+				const res = await fetch('https://random-data-api.com/api/users/random_user')
+				const {username: randomUserName} = await res.json()
+
+				localStorage.setItem('username', randomUserName)
+				console.log('Username:', randomUserName)
+				return randomUserName
+			}
+
+			const socket = io({
+				auth:{ //this info is sent to the server always
+					username : await getUsername(),
+					serverOffset : 0
+				}
+			})
 
 			const form = document.getElementById('form')
 			const input = document.getElementById('input')
 			const messages = document.getElementById('messages')
 
-			socket.on('chat message', (msg) => {
-				const item = `<li>${msg}</li>`
+			socket.on('chat message', (msg, serverOffset,username) => {
+				const item = `<li>
+				<p>${msg}</p>
+				<small>${username}</small>
+				</li>`
 				messages.innerHTML += item
 				messages.scrollTop = messages.scrollHeight
+				socket.auth.serverOffset = serverOffset // Update the server offset 
 			})
 
 			form.addEventListener('submit', (e) => {
@@ -58,6 +83,8 @@
 				height: calc(100% - 48px); /* Adjust to fit within the chat container */
 				overflow-y: auto; /* Enable vertical scrolling */	
 				scrollbar-width: none;		
+				scroll-behavior: smooth;
+				padding-bottom: 48px;
 			}
 
 			#messages li {				
